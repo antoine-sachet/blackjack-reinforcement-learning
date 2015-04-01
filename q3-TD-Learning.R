@@ -1,9 +1,9 @@
-########################
+#####################################################
 # File: q3-TD-learning.R
 # Author: Antoine Sachet
 # Github: github.com/antoine-sachet/easy21-RL-project
 # Date: 04/2015
-########################
+#####################################################
 
 # This file contains the functions to perform Temporal Difference reinforcement learning.
 # I use the SARSA algorithm for on-policy control,

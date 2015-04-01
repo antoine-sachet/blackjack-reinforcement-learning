@@ -1,9 +1,9 @@
-########################
+######################################################
 # File: q1-step.R
 # Author: Antoine Sachet
 # Github: github.com/antoine-sachet/easy21-RL-project
 # Date: 04/2015
-########################
+######################################################
 
 # This file contains the main game function: step(state, action)
 # as well as some helper functions: drawCard() and s.ini()

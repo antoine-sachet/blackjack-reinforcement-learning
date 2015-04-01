@@ -1,9 +1,9 @@
-########################
+#####################################################
 # File: q2-montecarlo-control.R
 # Author: Antoine Sachet
 # Github: github.com/antoine-sachet/easy21-RL-project
 # Date: 04/2015
-########################
+#####################################################
 
 # This file contains the main function to perform Monte-Carlo reinforcement learning.
 # The helper function epsgreedy is also defined.
