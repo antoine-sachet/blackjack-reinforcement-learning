@@ -33,6 +33,7 @@ if (!exists("HIT")) {
 
 load.library("plyr")
 load.library("foreach")
+load.library("ggplot2")
 
 # INPUT
 #   dealerState: card of the dealer, integer between 1 and 10
@@ -69,6 +70,18 @@ actionFeatures <- function(action) {
 
 # INPUTS
 #   s: state (as defined in q1-step.R)
+#   a: action, integer: HIT(1) or STICK(2)
+# returns a binary vector of length 36 representing the features
+phi <- function(s, a) {
+  tmp <- array(0, dim=c(3,6,2)) #empty array of dim 3*6*2
+  tmp[dealerFeatures(s[1]),
+      playerFeatures(s[2]),
+      actionFeatures(a)] <- 1 #putting one where a feature is on
+  return(as.vector(tmp)) #returning 'vectorized' (1-dim) array
+}
+
+# INPUTS
+#   s: state (as defined in q1-step.R)
 #   Q: action-value function, that is an array of dim: (10, 21, 2)
 #   eps: numeric value for epsilon
 # OUTPUT
@@ -78,7 +91,7 @@ epsgreedy <- function(s, Q, eps) {
   if(runif(1)<eps)
     return(sample(1:2, 1)) # random action taken with eps probability
   else
-    return(which.max(Q[s[1],s[2],])) # else action maximizing Q
+    return(which.max(c(Q(s,HIT), Q(s,STICK)))) # else action maximizing Q
 }
 
 # INPUTS
@@ -102,19 +115,10 @@ epsgreedy <- function(s, Q, eps) {
 sarsa.coarse.coding <- function(lambda, gamma=1, w=NULL, nb.episode=1, eps=0.05, step.size=0.01){
   # setting w and N to their default value if necessary
   if (is.null(w))
-    w <- array(0L, dim=36)
+    w <- array(0,dim=36)
 
-  # defining phi:
-  # returns a vector of length 36
-  phi <- function(s, a) {
-    tmp <- array(0, dim=c(3,6,2)) #empty array of dim 3*6*2
-    tmp[dealerFeatures(s[1]),
-        playerFeatures(s[2]),
-        actionFeatures(a)] <- 1 #putting one where a feature is on
-    return(as.vector(tmp)) #returning 'vectorized' (1-dim) array
-  }
   # Q is simply the matrix product of phi and w
-  Q <- function(s,a) phi(s,a) %*% w
+  Q <- function(s,a) as.vector(phi(s,a) %*% w)
 
   # defining our policy (reference to Q is not closure)
   policy <- function(s) {
@@ -132,8 +136,7 @@ sarsa.coarse.coding <- function(lambda, gamma=1, w=NULL, nb.episode=1, eps=0.05,
     # s[3] is the "terminal state" flag
     # s[3]==1 means the game is over
     while(s[3]==0L) {
-      # incrementing eligibility trace
-      e[s[1], s[2], a] <- e[s[1], s[2], a] + 1
+
       # performing step
       tmp <- step(s, a)
       s2 <- tmp[[1]]
@@ -153,11 +156,62 @@ sarsa.coarse.coding <- function(lambda, gamma=1, w=NULL, nb.episode=1, eps=0.05,
       ind <- which(e>0)
       # updating eligibility traces and w
       e <- gamma*lambda*e + phi(s,a)
-      w <- w + alpha*delta*e
+      w <- w + step.size*delta*e
       s <- s2
       a <- a2
     }
   }
-  return(list(Q=Q,N=N))
+  return(w)
 }
 
+######## COMPUTING w WITH SARSA COARSE CODING #########
+
+# loading results from montecarlo
+if(!exists("res")){ # if q2-montecarlo-control.R was executed, there is no need to load anything
+  load("D:/Sachou/UCL/RL/easy21-RL-project/results/MonteCarlo/q2-MC-res-4Mepi.Robj")
+}
+QMC <- res$Q
+
+MSE <- foreach(1:10, .combine='rbind') %do% {
+  # computing w for lambda from 0 to 1
+  lambdas <- seq(0, 1, 0.1)
+  W <- foreach(lambda=lambdas) %do% {
+    sarsa.coarse.coding(lambda, nb.episode=1000)
+  }
+  # enumerating all possible states
+  states <- expand.grid(dealer=1:10, player=1:21, action=c(HIT, STICK))
+  # computing MSE approximated Q and montecarlo's Q
+  foreach(w=W, .combine=c) %do% {
+    # computing squared errors w.r.t montecarlo's action-value function
+    sqdiff <- foreach(s=states, .combine=c) %do% {
+      (phi(c(s[1], s[2]),s[3])%*%w - QMC[s])**2
+    }
+    mean(sqdiff) # taking the mean of the SE
+  }
+}
+mse <- colMeans(MSE)
+# plotting the MSE vs lambda
+data <- data.frame(lambda=lambdas, mse=mse, se=aaply(MSE, .margins=2, sd))
+ggplot(data, aes(x=lambdas))+geom_point(aes(y=mse))+geom_errorbar(aes(ymax=mse+se, ymin=mse-se))
+
+# computing MSE at every step for lambda=1
+w=NULL
+mse <- times(1000) %do% {
+  w <- sarsa.coarse.coding(lambda=1, w=w, nb.episode=1)
+  sqdiff <- laply(states, .fun=function(s) {
+    (phi(c(s[1], s[2]),s[3])%*%w - QMC[s])**2
+  })
+  mean(sqdiff) # taking the mean of the SE
+}
+plot(mse)
+
+# computing MSE at every step for lambda=0
+w=NULL
+mse <- times(1000) %do% {
+  w <- sarsa.coarse.coding(lambda=0, w=w, nb.episode=1)
+  sqdiff <- laply(states, .fun=function(s) {
+    (phi(c(s[1], s[2]),s[3])%*%w - QMC[s])**2
+  })
+  mean(sqdiff) # taking the mean of the SE
+}
+plot(mse)
