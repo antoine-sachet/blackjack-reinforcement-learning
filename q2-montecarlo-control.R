@@ -1,22 +1,59 @@
-library("plyr") # for aaply
+########################
+# File: q2-montecarlo-control.R
+# Author: Antoine Sachet
+# Github: github.com/antoine-sachet/easy21-RL-project
+# Date: 04/2015
+########################
+
+# This file contains the main function to perform Monte-Carlo reinforcement learning.
+# The helper function epsgreedy is also defined.
+#
+# Note that the function montecarlo requires some functions from q1-step.R.
+# Please run q1-step.R prior to running this file.
 
 if (!exists("HIT")) {
-  # should set working directory to project folder, e.g.
-  # setwd("D:/Sachou/UCL/RL/easy21-RL-project")
+  # if q1 has not been run, we run it
+  # (you will to set the working directory to the project folder)
+  # setwd("C:/path/to/easy21-RL-project")
   source("q1-step.R")
 }
 
+load.library("plyr")
+
+# INPUTS
+#   s: state (as defined in q1-step.R)
+#   Q: action-value function, that is an array of dim: (10, 21, 2)
+#   eps: numeric value for epsilon
+# OUTPUT
+# action to take following an epsilong-greedy policy
+# 1 is HIT and 2 is STICK (as defined in q1-step.R)
 epsgreedy <- function(s, Q, eps) {
   if(runif(1)<eps)
-    return(sample(1:2, 1))
+    return(sample(1:2, 1)) # random action taken with eps probability
   else
-    return(which.max(Q[s[1],s[2],]))
+    return(which.max(Q[s[1],s[2],])) # else action maximizing Q
 }
 
+# INPUTS
+#   Q: action-value function,
+#       that is an array of dim: (10, 21, 2)
+#       will be an array of 0 if not provided
+#   N: counter of state-action visits,
+#       that is an array of integers of dim: (10, 21, 2)
+#       will be an array of 0 if not provided OUTPUT
+#   nb.episode: number of episode to play
+#   N0: offset for N.
+#       At each episode, an epsilon-greedy action is taken with
+#       eps = N0/(total+N0) where total is the total number of times
+#       this state has been visited.
+# OUTPUT
+#   list of:
+#     Q: updated action-value function
+#     N: updated counter of state-action visits
 montecarlo <- function(Q=NULL, N=NULL, nb.episode=1, N0=100){
+  # setting Q and N to their default value if necessary
   if (is.null(Q))
     Q <- array(0, dim=c(10, 21, 2))
-
   if (is.null(N))
     N <- array(0L, c(10,21,2))
 
@@ -27,10 +64,10 @@ montecarlo <- function(Q=NULL, N=NULL, nb.episode=1, N0=100){
     }
     s <- s.ini()
     r <- 0L
-    # counter for state visits during this episode
+    # counter for state visits during *this* episode
     N.episode <- array(0L, c(10,21,2))
 
-    # s[3] is a flag indicating the terminal state
+    # s[3] is the "terminal state" flag
     # s[3]==1 means the game is over
     while(s[3]==0L) {
       # choosing action a
