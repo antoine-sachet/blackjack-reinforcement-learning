@@ -90,8 +90,8 @@ res <- montecarlo(nb.episode=100000)
 
 # computing and plotting value function
 V <- aaply(res$Q, .margins=c(1,2), .fun=max)
-persp(V, theta=55, phi=40, d=1.5, expand=0.6, border=NULL, ticktype="detailed",
-      shade=0.5, xlab="Dealer showing", ylab="Player sum", zlab="Value", nticks=c(10,21,10))
+persp(V, x=1:10, y=1:21, theta=55, phi=40, d=1.5, expand=0.6, border=NULL, ticktype="detailed",
+      shade=0.5, xlab="Dealer showing", ylab="Player sum", zlab="Value", nticks=10)
 
 # performing additional episodes
 res <- montecarlo(N=res$N, Q=res$Q, nb.episode=100000)
