@@ -50,7 +50,7 @@ s.ini <- function () {
 step <- function (s, a) {
   # if terminal state, exit gracefully
   if(s[3]==1)
-    return(list(s, as.integer(0)))
+    return(list(s, 0L))
 
   # both new state and reward will be returned
   new.s <- s

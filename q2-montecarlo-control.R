@@ -12,10 +12,7 @@
 # Please run q1-step.R prior to running this file.
 
 if (!exists("HIT")) {
-  # if q1 has not been run, we run it
-  # (you will to set the working directory to the project folder)
-  # setwd("C:/path/to/easy21-RL-project")
-  source("q1-step.R")
+  stop("Please run 'q1-step.R' prior to running this file.")
 }
 
 load.library("plyr")
@@ -35,12 +32,12 @@ epsgreedy <- function(s, Q, eps) {
 }
 
 # INPUTS
-#   Q: action-value function,
+#   Q: action-value "function",
 #       that is an array of dim: (10, 21, 2)
 #       will be an array of 0 if not provided
 #   N: counter of state-action visits,
 #       that is an array of integers of dim: (10, 21, 2)
-#       will be an array of 0 if not provided OUTPUT
+#       will be an array of 0 if not provided
 #   nb.episode: number of episode to play
 #   N0: offset for N.
 #       At each episode, an epsilon-greedy action is taken with
@@ -57,11 +54,12 @@ montecarlo <- function(Q=NULL, N=NULL, nb.episode=1, N0=100){
   if (is.null(N))
     N <- array(0L, c(10,21,2))
 
+  # defining our policy
+  policy <- function(s) {
+    epsgreedy(s, Q, N0/(sum(N[s[1], s[2],])+N0))
+  }
+
   foreach(i=1:nb.episode) %do% {
-    # defining policy for new Q
-    policy <- function(s) {
-      epsgreedy(s, Q, N0/(sum(N[s[1], s[2],])+N0))
-    }
     s <- s.ini()
     r <- 0L
     # counter for state visits during *this* episode
@@ -83,7 +81,6 @@ montecarlo <- function(Q=NULL, N=NULL, nb.episode=1, N0=100){
     ind <- which(N.episode!=0)
     N[ind] <- (N[ind]+N.episode[ind])
     Q[ind] <- Q[ind] + (r-Q[ind]) / N[ind]
-
   }
   return(list(Q=Q, N=N))
 }
@@ -94,7 +91,7 @@ res <- montecarlo(nb.episode=100000)
 # computing and plotting value function
 V <- aaply(res$Q, .margins=c(1,2), .fun=max)
 persp(V, theta=55, phi=40, d=1.5, expand=0.6, border=NULL, ticktype="detailed",
-           shade=0.5, xlab="Dealer showing", ylab="Player sum", zlab="Value", nticks=c(10,21,10))
+      shade=0.5, xlab="Dealer showing", ylab="Player sum", zlab="Value", nticks=c(10,21,10))
 
 # performing additional episodes
 res <- montecarlo(N=res$N, Q=res$Q, nb.episode=100000)
