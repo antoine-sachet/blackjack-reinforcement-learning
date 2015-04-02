@@ -123,24 +123,28 @@ sarsa <- function(lambda, gamma=1, Q=NULL, N=NULL, nb.episode=1, N0=100){
 # loading results from montecarlo
 if(!exists("res")){ # if q2-montecarlo-control.R was executed, there is no need to load anything
   warning(paste("Results from q2-montecarlo-control.R not found in memory.",
-    "Will load results from results/MonteCarlo/q2-MC-res-4Mepi.Robj"))
+                "Will load results from results/MonteCarlo/q2-MC-res-4Mepi.Robj"))
   load("results/MonteCarlo/q2-MC-res-4Mepi.Robj")
 }
 QMC <- res$Q
 
-# computing Q for lambda from 0 to 1
-lambdas <- seq(0, 1, 0.1)
-Qsarsa <- llply(lambdas, .fun= function(lambda) {
-  sarsa(lambda, nb.episode=1000)[[1]]
-})
+MSE <- foreach(1:10, .combine=rbind) %do% {
+  # computing Q for lambda from 0 to 1
+  lambdas <- seq(0, 1, 0.1)
+  Qsarsa <- llply(lambdas, .fun= function(lambda) {
+    sarsa(lambda, nb.episode=1000)[[1]]
+  })
 
-# computing MSE between sarsa's Q and montecarlo's Q
-MSE <- laply(Qsarsa, .fun=function(Q) {
-  mean((Q-QMC)**2)
-})
-
+  # computing MSE between sarsa's Q and montecarlo's Q
+  MSE <- laply(Qsarsa, .fun=function(Q) {
+    mean((Q-QMC)**2)
+  })
+}
 # plotting the MSE vs lambda
-plot(lambdas, MSE)
+load.library("ggplot2")
+df <- data.frame(lambda=lambdas, mse=colMeans(MSE), se=aaply(MSE, .margins=2, sd))
+ggplot(df) + geom_point(aes(x=lambda, y=mse)) +
+         geom_errorbar(aes(x=lambda, y=mse, ymin=mse-se, ymax=mse+se))
 
 # computing MSE at every step for lambda=1
 Q <- NULL

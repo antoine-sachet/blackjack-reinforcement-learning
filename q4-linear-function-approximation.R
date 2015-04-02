@@ -192,9 +192,9 @@ MSE <- foreach(1:10, .combine='rbind') %do% {
     mean(sqdiff) # taking the mean of the SE
   }
 }
-mse <- colMeans(MSE)
+
 # plotting the MSE vs lambda
-data <- data.frame(lambda=lambdas, mse=mse, se=aaply(MSE, .margins=2, sd))
+data <- data.frame(lambda=lambdas, mse=colMeans(MSE), se=aaply(MSE, .margins=2, sd))
 ggplot(data, aes(x=lambdas))+geom_point(aes(y=mse))+geom_errorbar(aes(ymax=mse+se, ymin=mse-se))
 
 # computing MSE at every step for lambda=1
