@@ -122,7 +122,9 @@ sarsa <- function(lambda, gamma=1, Q=NULL, N=NULL, nb.episode=1, N0=100){
 
 # loading results from montecarlo
 if(!exists("res")){ # if q2-montecarlo-control.R was executed, there is no need to load anything
-  load("D:/Sachou/UCL/RL/easy21-RL-project/results/MonteCarlo/q2-MC-res-4Mepi.Robj")
+  warning(paste("Results from q2-montecarlo-control.R not found in memory.",
+    "Will load results from results/MonteCarlo/q2-MC-res-4Mepi.Robj"))
+  load("results/MonteCarlo/q2-MC-res-4Mepi.Robj")
 }
 QMC <- res$Q
 
