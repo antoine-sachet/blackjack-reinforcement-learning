@@ -12,7 +12,10 @@
 # Please run q1-step.R prior to running this file.
 
 if (!exists("HIT")) {
-  stop("Please run 'q1-step.R' prior to running this file.")
+  tryCatch(source("q1-step.R"),
+           warning=function(e) {
+             stop("Please run 'q1-step.R' prior to running this file.")
+           })
 }
 
 load.library("plyr")
